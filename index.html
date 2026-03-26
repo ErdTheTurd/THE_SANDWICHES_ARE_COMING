@@ -2,26 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Sandwich Dodge</title>
+<title>Sandwich Dodge with Toppings</title>
 <style>
-  body {
-    margin: 0;
-    background: #222;
-    color: white;
-    font-family: Arial, sans-serif;
-    text-align: center;
-  }
-  canvas {
-    background: #333;
-    display: block;
-    margin: 0 auto;
-  }
+  body { margin: 0; background: #222; color: white; font-family: Arial, sans-serif; text-align: center; }
+  canvas { background: #333; display: block; margin: 0 auto; }
 </style>
 </head>
 <body>
-
-<h1>🥪 Sandwich Dodge 🗑️</h1>
-<p>Use ← → arrow keys to switch lanes</p>
+<h1>🥪 Sandwich Dodge 🗑️ + Toppings 🍅🥬🧀🥩</h1>
+<p>Use ← → to move. Collect toppings, dodge trash cans!</p>
 <canvas id="gameCanvas" width="400" height="600"></canvas>
 
 <script>
@@ -31,38 +20,35 @@ const ctx = canvas.getContext("2d");
 const lanes = 5;
 const laneWidth = canvas.width / lanes;
 
-let player = {
-  lane: 2,
-  y: canvas.height - 80,
-  size: 40
-};
-
+let player = { lane: 2, y: canvas.height - 80, size: 40 };
 let obstacles = [];
+let toppings = [];
 let speed = 3;
 let score = 0;
 let gameOver = false;
 
 // Controls
 document.addEventListener("keydown", (e) => {
-  if (e.key === "ArrowLeft" && player.lane > 0) {
-    player.lane--;
-  }
-  if (e.key === "ArrowRight" && player.lane < lanes - 1) {
-    player.lane++;
-  }
+  if (e.key === "ArrowLeft" && player.lane > 0) player.lane--;
+  if (e.key === "ArrowRight" && player.lane < lanes - 1) player.lane++;
 });
 
-// Spawn obstacles
+// Spawn obstacles (trash cans)
 function spawnObstacle() {
   const lane = Math.floor(Math.random() * lanes);
-  obstacles.push({
-    lane: lane,
-    y: -50,
-    size: 40
-  });
+  obstacles.push({ lane, y: -50, size: 40 });
 }
 
-// Draw sandwich
+// Spawn toppings
+function spawnTopping() {
+  const lane = Math.floor(Math.random() * lanes);
+  const types = ["🍅", "🥬", "🧀"];
+  // Super rare ham (5% chance)
+  const type = Math.random() < 0.05 ? "🥩" : types[Math.floor(Math.random() * types.length)];
+  toppings.push({ lane, y: -50, size: 40, type });
+}
+
+// Draw player
 function drawPlayer() {
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
@@ -73,27 +59,37 @@ function drawPlayer() {
 function drawObstacles() {
   ctx.font = "30px Arial";
   ctx.textAlign = "center";
-  obstacles.forEach(obs => {
-    ctx.fillText("🗑️", obs.lane * laneWidth + laneWidth / 2, obs.y);
-  });
+  obstacles.forEach(obs => ctx.fillText("🗑️", obs.lane * laneWidth + laneWidth / 2, obs.y));
+}
+
+// Draw toppings
+function drawToppings() {
+  ctx.font = "30px Arial";
+  ctx.textAlign = "center";
+  toppings.forEach(top => ctx.fillText(top.type, top.lane * laneWidth + laneWidth / 2, top.y));
 }
 
 // Update obstacles
 function updateObstacles() {
   obstacles.forEach(obs => {
     obs.y += speed;
+    if (obs.lane === player.lane && obs.y > player.y - 20 && obs.y < player.y + 20) gameOver = true;
+  });
+  obstacles = obstacles.filter(obs => obs.y < canvas.height + 50);
+}
 
-    // Collision detection
-    if (
-      obs.lane === player.lane &&
-      obs.y > player.y - 20 &&
-      obs.y < player.y + 20
-    ) {
-      gameOver = true;
+// Update toppings
+function updateToppings() {
+  toppings.forEach((top, i) => {
+    top.y += speed;
+    // Collect
+    if (top.lane === player.lane && top.y > player.y - 20 && top.y < player.y + 20) {
+      if (top.type === "🥩") score += 50;
+      else score += 10;
+      toppings.splice(i, 1);
     }
   });
-
-  obstacles = obstacles.filter(obs => obs.y < canvas.height + 50);
+  toppings = toppings.filter(top => top.y < canvas.height + 50);
 }
 
 // Draw lanes
@@ -123,8 +119,10 @@ function gameLoop() {
   drawLanes();
   drawPlayer();
   drawObstacles();
+  drawToppings();
 
   updateObstacles();
+  updateToppings();
 
   score++;
   ctx.fillText("Score: " + score, 70, 30);
@@ -132,12 +130,12 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// Spawn loop
+// Spawn loops
 setInterval(spawnObstacle, 1000);
+setInterval(spawnTopping, 1500);
 
 // Start game
 gameLoop();
 </script>
-
 </body>
 </html>
