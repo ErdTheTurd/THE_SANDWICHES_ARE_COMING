@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sandwich Dodge</title>
+<style>
+  body {
+    margin: 0;
+    background: #222;
+    color: white;
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  canvas {
+    background: #333;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+<h1>🥪 Sandwich Dodge 🗑️</h1>
+<p>Use ← → arrow keys to switch lanes</p>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const lanes = 5;
+const laneWidth = canvas.width / lanes;
+
+let player = {
+  lane: 2,
+  y: canvas.height - 80,
+  size: 40
+};
+
+let obstacles = [];
+let speed = 3;
+let score = 0;
+let gameOver = false;
+
+// Controls
+document.addEventListener("keydown", (e) => {
+  if (e.key === "ArrowLeft" && player.lane > 0) {
+    player.lane--;
+  }
+  if (e.key === "ArrowRight" && player.lane < lanes - 1) {
+    player.lane++;
+  }
+});
+
+// Spawn obstacles
+function spawnObstacle() {
+  const lane = Math.floor(Math.random() * lanes);
+  obstacles.push({
+    lane: lane,
+    y: -50,
+    size: 40
+  });
+}
+
+// Draw sandwich
+function drawPlayer() {
+  ctx.font = "30px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("🥪", player.lane * laneWidth + laneWidth / 2, player.y);
+}
+
+// Draw obstacles
+function drawObstacles() {
+  ctx.font = "30px Arial";
+  ctx.textAlign = "center";
+  obstacles.forEach(obs => {
+    ctx.fillText("🗑️", obs.lane * laneWidth + laneWidth / 2, obs.y);
+  });
+}
+
+// Update obstacles
+function updateObstacles() {
+  obstacles.forEach(obs => {
+    obs.y += speed;
+
+    // Collision detection
+    if (
+      obs.lane === player.lane &&
+      obs.y > player.y - 20 &&
+      obs.y < player.y + 20
+    ) {
+      gameOver = true;
+    }
+  });
+
+  obstacles = obstacles.filter(obs => obs.y < canvas.height + 50);
+}
+
+// Draw lanes
+function drawLanes() {
+  ctx.strokeStyle = "#555";
+  for (let i = 1; i < lanes; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * laneWidth, 0);
+    ctx.lineTo(i * laneWidth, canvas.height);
+    ctx.stroke();
+  }
+}
+
+// Main loop
+function gameLoop() {
+  if (gameOver) {
+    ctx.fillStyle = "white";
+    ctx.font = "40px Arial";
+    ctx.fillText("Game Over!", canvas.width / 2, canvas.height / 2);
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, canvas.width / 2, canvas.height / 2 + 40);
+    return;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawLanes();
+  drawPlayer();
+  drawObstacles();
+
+  updateObstacles();
+
+  score++;
+  ctx.fillText("Score: " + score, 70, 30);
+
+  requestAnimationFrame(gameLoop);
+}
+
+// Spawn loop
+setInterval(spawnObstacle, 1000);
+
+// Start game
+gameLoop();
+</script>
+
+</body>
+</html>
